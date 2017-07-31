@@ -1,0 +1,6 @@
+Title: Mine algorithm for gene expression clustering
+License: MIT
+DisplayMode: Normal
+Author: Clemence Reda <creda@ens-paris-saclay.fr>
+Type: R
+Tags: gene expression pattern clustering algorithm single cell data sequencing

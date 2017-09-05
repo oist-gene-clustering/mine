@@ -14,7 +14,7 @@ library(fastcluster)
 library(mixtools)
 library(mnormt)
 
-path="~/Documents/algorithm/"
+path=""
 sourceIt <- function(file) source(paste(path, file, sep=""))
 loadIt <- function(file) load(paste(path, file, sep=""))
 
@@ -180,6 +180,8 @@ mine <- function(M, d=0.5, d_neighbors=d, dprime=0.9, dpattern=0.9, f=0.7,
     stopCluster(cl)
     
     start <- clock("End Part (II): bimodal copulas", start)
+
+    return(list(copulas, assay(sca)))
     
     #______________________________________________________________________________________________#
     #                       PATTERN MERGING                                                        #
@@ -201,10 +203,6 @@ mine <- function(M, d=0.5, d_neighbors=d, dprime=0.9, dpattern=0.9, f=0.7,
     }
     
     start <- clock("End Part (III): pattern merging", start)
-    
-    print(mergeablePairs)
-    
-    return(list(copulas, simValues, assay(sca), tmp[[3]]))
     
     #_________________________________________________________________________________________#
     #                       CLUSTERING                                                        #

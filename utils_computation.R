@@ -256,8 +256,8 @@ dmixture <- function(x, pattern_ji, pdr, lambda_0, mu_i, delta, log=FALSE) {
 #' 
 #' @export
 pmixture <- function(q, pattern_ji, pdr, lambda_0, mu_i, delta, lower.tail=TRUE, log.p=FALSE) {
-  if (pattern_ji == 0) return(pCPNB(q, pdr, lambda_0, mu_i, delta, log.p=log.p))
-  return(1-pCPNB(q, pdr, lambda_0, mu_i, delta, log.p=log.p))
+  if (pattern_ji == 0) return(pCPNB(q, pdr, lambda_0, mu_i, delta, lower.tail=lower.tail, log.p=log.p))
+  return(1-pCPNB(q, pdr, lambda_0, mu_i, delta, lower.tail=lower.tail, log.p=log.p))
 }
 
 ## inf {x in R+ | Prob(-X <= -x) >= p} = inf {x in R+ | Prob(X >= x) >= p} ##
@@ -277,8 +277,8 @@ pmixture <- function(q, pattern_ji, pdr, lambda_0, mu_i, delta, lower.tail=TRUE,
 #' 
 #' @export
 qmixture <- function(p, pattern_ji, pdr, lambda_0, mu_i, delta, lower.tail=TRUE, log.p=FALSE) {
-  if (pattern_ji == 1) return(-qCPNB(p, pdr, lambda_0, -mu_i, delta, !lower.tail, log.p))
-  return(qCPNB(p, pdr, lambda_0, mu_i, delta, lower.tail, log.p))
+  if (pattern_ji == 1) return(-qCPNB(p, pdr, lambda_0, mu_i, delta, lower.tail=!lower.tail, log.p=log.p))
+  return(qCPNB(p, pdr, lambda_0, mu_i, delta, lower.tail=lower.tail, log.p=log.p))
 }
 
 #' Mixture random generation function
@@ -433,10 +433,8 @@ computeMarginParam <- function(p, m, P, modelDropout, sca, is_mild) {
 bimodalNormalCopula <- function(p, j, M, mixParam, muCop, rhoCop, P, pdrArray, lambda_0, mu, delta) {
   pattern_j = P[, j]
   kk <- length(muCop)
-  #
   invCop <- lapply(1:kk, function(k) invCustom(rhoCop[[k]]))
-  #rnormmv <- function(rho, mu) return(pnorm(rmnorm(n=n, mean=mu, varcov=rho)))
-  rnormmv <- function(rho, mu) return(pnorm(rmvnorm(n=n, mean=mu, sigma=rho)))
+  rnormmv <- function(rho, mu) return(pnorm(rmnorm(n=n, mean=mu, varcov=rho)))
 
   ##______________________________________________##
   ## Proof for Gaussian copulas in Song (2000)    ##
@@ -456,10 +454,16 @@ bimodalNormalCopula <- function(p, j, M, mixParam, muCop, rhoCop, P, pdrArray, l
   ##_________________________________________##
   ## x is a NON-TRANSFORMED VECTOR           ##
   pCopula <- function(x, log.p=F, lower.tail=T) {
-    q <- qnorm(sapply(1:p, function(i) pmixture(x[i], pattern_j[i], pdrArray[i], lambda_0, mu[i], delta[i])))
+    q <- sapply(1:p, function(i) pmixture(x[i], pattern_j[i], pdrArray[i], lambda_0, mu[i], delta[i]))
+    print(q)
+    q <- qnorm(q)
+    print(q)
     q[is.infinite(q) & q < 0] <- -5
     q[is.infinite(q) & q > 0] <- 5
-    retvals <- sum(sapply(1:kk, function(k) mixParam[k]*pmnorm(x=as.numeric(q), mean=muCop[[k]], varcov=rhoCop[[k]])))
+    retvals <- sapply(1:kk, function(k) mixParam[k]*pmnorm(x=as.numeric(q), mean=muCop[[k]], varcov=rhoCop[[k]]))
+    print(retvals)
+    retvals <- sum(retvals)
+    print(retvals)
     if (log.p) retvals <- log(retvals)
     if (!lower.tail) retvals <- 1-retvals
     return(retvals)
@@ -470,11 +474,17 @@ bimodalNormalCopula <- function(p, j, M, mixParam, muCop, rhoCop, P, pdrArray, l
   ##___________________##
   rCopula <- function(n) {
     m <- sample(1:kk, prob=mixParam, size=n, replace=T)
-    #rvectors <- base::t(rmnorm(n=n, mean=muCop[[m]], varcov=rhoCop[[m]]))
-    rvectors <- base::t(rnormmv(n=n)) %*% rhoCop[[m]] + muCop[[m]]
+    rvectors <- base::t(matrix(unlist(lapply(m, function(k) rmnorm(n=1, mean=muCop[[k]], varcov=rhoCop[[k]]))), nrow=n))
     pvectors <- pnorm(rvectors)
-    uvectors <- lapply(1:n, function(j) sapply(1:p, 
-                                               function(i) qmixture(pvectors[i, j], pattern_j[i], pdrArray[i], lambda_0, mu[i], delta[i])))
+    p <- nrow(pvectors)
+    uvectors <- NULL
+    for (j in 1:n) {
+        uvectors <- cbind(uvectors, sapply(1:p, function(i) {print(i); qmixture(pvectors[i, j], pattern_j[i], pdrArray[i], lambda_0, 
+                                     mu[i], delta[i])}))
+    }
+    #uvectors <- lapply(1:n, function(j) sapply(1:p, 
+    #                                           function(i) qmixture(pvectors[i, j], pattern_j[i], pdrArray[i], lambda_0, mu[i], delta[i])))
+    #uvectors <- matrix(unlist(uvectors), ncol=n)
     return(uvectors)
   }
   

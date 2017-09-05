@@ -226,7 +226,7 @@ houseKeeping <- function() {
 #' @return fiber of x by f, or -1 if x is not in the codomain of f, or if it looped
 #' 
 #' @export
-bisectionInv <- function(f, x, eps=1e-7, step=100, lim=1e-7, xmin=0, xmax=1, maxiter=1e5, limInf=1e-4) {
+bisectionInv <- function(f, x, eps=1e-7, step=10, lim=1e-7, xmin=0, xmax=1, maxiter=1e5, limInf=1e-4) {
   if (x > xmax | x < xmin) return(-1)
   if (x == xmax) return(Inf)
   if (x == xmin) return(-Inf)
